@@ -1,93 +1,87 @@
-# K4RMA Signal — Live Copilot v2
+# K4RMA Signal — Source-grounded presentation copilot
 
-Phone-first presentation Q&A grounded in the K4RMA C# source, your later diff exports, and Jeongmin's submitted Week 10 PowerPoint notes.
+A responsive Korean/English presentation assistant that transcribes Korean speech (Groq Whisper), detects likely questions, retrieves C# source evidence, and generates short technical answers through a configurable answer provider. **Use real-time assistance and capture classroom audio only when permitted.**
 
-**Runnable local web app**. Built with dependency-free Node.js and plain JS/CSS so you can run it immediately without `npm install`.
+## Status (this release)
 
-## Run locally
+- Local Node server, Vercel functions, model-provider adapters, evidence retrieval, and automated regression tests are implemented.
+- Speech capture uses overlapping approximately 11-second MediaRecorder windows, starting every 9 seconds. This is **chunked near-live transcription**, not true sub-second streaming. The phone must remain awake and in the foreground.
+- `Presenting` suppresses auto answers and `Q&A` detects likely questions. **The microphone cannot identify the professor or the four presenters.** No speaker biometrics/diarization are claimed.
+- Models and provider APIs have **not** been tested against a real user API account. Classroom recognition, precise latency, mobile devices, paid API billing, and production Vercel deployment require user-side verification.
+- The bundled corpus contains the integrated `feat/2d-prototype` snapshot, supplied later diffs, and Jeongmin's 28-slide submitted presentation. It is **not** a complete verified checkout of your latest `feat/rising-slash` branch until you run the sync command below.
 
-1. Install Node.js 20 or later.
-2. Open this project folder in Terminal / PowerShell.
-3. In `cmd` / PowerShell, set `GROQ_API_KEY` on the server:
+## Local start — Windows PowerShell
 
-   PowerShell:
-   ```powershell
-   $env:GROQ_API_KEY="gsk_YOUR_KEY"
-   $env:APP_PIN="choose-a-secret-pin"
-   npm start
-   ```
+Install Node.js 20 or later and run from this directory:
 
-   macOS/Linux:
-   ```bash
-   GROQ_API_KEY="gsk_YOUR_KEY" APP_PIN="choose-a-secret-pin" npm start
-   ```
-4. Open **http://localhost:3000** in the same computer.
-5. On a hosted HTTPS copy, open the web app on your phone; set the PIN under **Security & preferences**.
-
-Without `GROQ_API_KEY`, the app supports manual question search **in evidence-only mode**; it does not make up answers. With only `OPENROUTER_API_KEY`, text answers work but mic transcription still needs Groq.
-
-## Deploy to Vercel (free hosting for experimentation)
-
-1. Create a private repository with these app files. **Review the embedded source corpus before publishing** — the uploaded source may include team/private work. Do not make it public unless your team approves.
-2. Import the project into Vercel. Use **Other** / no frontend framework; output directory `public` when requested. The repo has `api/*.js` Vercel functions and static `public/*` assets.
-3. Add server environment variables `GROQ_API_KEY`, `APP_PIN`, and optionally `OPENROUTER_API_KEY` / `OPENROUTER_MODEL`.
-4. Deploy. Open the generated **https** URL on your phone, and allow microphone access. The phone and laptop can use the same site; neither uploads the full repository per question.
-5. If deploying to a platform without serverless handlers, run `node server.mjs` as a long-running process behind HTTPS instead.
-
-**Security:** API keys must remain on the server. Never put them in `public/app.js`, the client form, a committed `.env`, or a public GitHub repo. The optional PIN is a lightweight access gate only, not full authentication. A public deployment without a PIN is unsafe because strangers can spend your API quota. Audio clips are sent to Groq, not saved by this app. Third-party provider handling and retention are controlled by their own policies.
-
-## What changed in v2
-
-- **Fully bilingual website UI**: all interface controls, explanations, status labels and error messages in Korean or English, switched instantly via the header. Answer language remains a separate choice.
-- **Speaker-aware workflow WITHOUT fake speaker identification**: Presenting mode prevents automatic answers to your teammates' speech; switch to Q&A mode when the question period begins. The phone does NOT know who is the professor. In Q&A mode, likely questions are prioritized, and less certain candidates require one-tap approval. Voice recognition/enrollment is intentionally NOT claimed or implemented.
-- **Better answer contract**: the LLM is instructed to answer the actual question, explain concrete C# methods/data flow, say *why* the mechanism is used, and acknowledge gaps and older code versions. Answers cite retrieved snippets; short follow-ups include the previous questions as context.
-- **Redesigned UI**: compact, high-contrast typography, responsive two-column desktop view, large readable answer, restrained signal-green highlights, keyboard focus states, reduced-motion support, and touch-friendly controls.
-- **Strict OpenRouter free-model guard**: only `openrouter/free` and model IDs ending `:free` are permitted. Groq requests are not charged when you stay on a free Groq account within its quota. No purchase is required for the app itself.
-
-## Classroom usage (with permission)
-
-1. Choose the slide and answer language; optionally select Korean interface with the header language switch.
-2. During your team’s presentation, keep **Presenting** mode enabled. The app can still transcribe for review, but **does not auto-answer**.
-3. At Q&A, switch to **Q&A time**. The app detects likely spoken questions from the text. Strong candidates auto-answer if enabled; uncertain candidates show a one-tap confirmation prompt.
-4. If the speaker is too far away or speech is noisy, type the question directly or use **Answer latest**.
-5. Answers show source snippets and version labels. *High evidence* refers to cited source support, **not** proof of successful Unity Play Mode execution.
-
-**Critical limitation:** This is a practical **presentation-phase filter**, not biometric speaker identification. No single-phone free-tier system guarantees differentiation of a professor from teammates in a live classroom. A laptop with a microphone physically closer to the questioner may improve captured audio. For full automatic identification, a separately validated, consented diarization/speaker-enrollment solution is necessary, and its reliability remains environment-dependent.
-
-The browser records independent ~9-second clips and sends them to Groq Whisper. It is not continuous sample-by-sample streaming; question latency and chunk-boundary errors remain possible. The app does not store raw audio, but third-party processing policies apply. Keep the screen on and this tab active.
-
-## Data integrity / important limitations
-
-The source archive is **Jeongmin's feat/2d-prototype snapshot (Nov 1)**, *not* your final local `feat/rising-slash` Git HEAD. We additionally indexed the two user-supplied diff exports for the four Rising Slash changes and test harness. These are **later diff excerpts**, not a reconstructed, compiled source tree. The app tells the model to prefer the later excerpts over older code when conflicting. The submitted slide 19 may describe earlier UP01 single-sample tracking; the later diff introduces tracking then locking.
-
-**Do not treat `high confidence` as proof of runtime behavior.** Unity Play Mode and actual professor audio have NOT been tested here. If you want a truly current source corpus, replace `source_snapshot` with the latest code and rerun `python build_knowledge.py` after checking the relevant diff data and presentation path.
-
-## Testing
-
-```bash
+```powershell
+$env:APP_PIN="a-long-random-private-password"
+$env:GROQ_API_KEY="gsk_your_private_key"
+$env:ANSWER_PROVIDER="groq"
 npm test
 npm start
 ```
 
-Use manual UI checks in a browser, then test microphone capture on an HTTPS phone and a Korean audio sample from classroom distance. Browsers can suspend microphone recording when backgrounded. For a real class assessment, obtain the professor's permission for live AI assistance and audio capture; otherwise use Rehearsal Mode / manual question practice.
+Open `http://localhost:3000`. Enter the access secret under Preferences. Without `GROQ_API_KEY` transcription is disabled. Without *any* configured answer API key, manual questions return relevant source excerpts without fabricating a generated answer. If you omit `APP_PIN`, the development server binds only to localhost; **do not** expose that mode publicly.
 
-## Source paths
+## Optional model selection
 
-- `lib/core.mjs` — retrieval, API integrations, source-grounding rules, question classification
-- `api/answer.js` & `api/transcribe.js` — Vercel functions
-- `server.mjs` — zero-dependency Node local server
-- `public/app.js` — microphone capture, transcription queue, UI actions
-- `knowledge.json` — pre-indexed source, later diffs, 28 slides + notes
-- `build_knowledge.py` — local index generator (requires `python-pptx` if rebuilding)
+Groq speech transcription always uses `GROQ_API_KEY`. Answer generation can use any configured provider:
 
-## Tests and limitations
+| Provider | Environment | Recommended setting |
+|---|---|---|
+| Groq (free within quota) | `GROQ_API_KEY` | `ANSWER_PROVIDER=groq`, `GROQ_CHAT_MODEL=openai/gpt-oss-120b` |
+| OpenAI (paid API) | `OPENAI_API_KEY` | `ANSWER_PROVIDER=openai`, `OPENAI_MODEL=gpt-4.1-mini` |
+| Anthropic (paid API) | `ANTHROPIC_API_KEY` | `ANSWER_PROVIDER=anthropic`, `ANTHROPIC_MODEL=claude-haiku-4-5-20251001` |
+| OpenRouter (free models only by default) | `OPENROUTER_API_KEY` | `ANSWER_PROVIDER=openrouter`, `OPENROUTER_MODEL=openrouter/free` |
 
-`npm test` includes bilingual UI key checks, presenter/Q&A gating checks, free-model enforcement and source retrieval smoke tests. Local JavaScript and API smoke tests are not proof of Korean acoustic accuracy. A live Groq account, real phone browser, classroom recording conditions and human review are required for acceptance.
+All credentials are server-only. ChatGPT subscription fees do not cover OpenAI API usage. Paid models are **optional**, never bundled or automatically purchased. `ALLOW_PAID_FALLBACK=true` permits cross-provider fallback to *configured* paid providers when the chosen provider fails; the default is `false`. OpenRouter paid IDs are blocked unless `ALLOW_PAID_OPENROUTER=true` is explicitly set. API providers have different usage and retention policies.
 
-## Model defaults
+Model answers use structured JSON on supported APIs, bounded deadlines, no unbounded retry loop, constrained evidence excerpts, exact source-ID validation, and refusal when citations are absent. Structured JSON does **not** prove factual correctness. Source evidence is part of the prompt, so do not treat user-contributed repository content as trusted instructions.
 
-- `whisper-large-v3-turbo` — Korean STT via Groq (separate 9s clips)
-- `openai/gpt-oss-120b` — fast code Q&A via Groq
-- `openrouter/free` — optional fallback with routing variability
+## Synchronize your actual latest Unity Git branch (high priority)
 
-Groq endpoints: `https://api.groq.com/openai/v1/audio/transcriptions` and `/chat/completions`. This is designed to work with current API contracts but requests cannot be tested without your own private key.
+Run this on the computer that has your complete Unity project:
+
+```powershell
+node tools/sync-source.mjs "D:\Workplace\Your-Unity-Repo"
+npm test
+```
+
+The script reads `Assets/K4RMA/**/*.cs` from that **local** checkout and rewrites `knowledge.json`, replacing the older archived source and partial patch excerpts while retaining all 28 slide notes. It records the branch, commit SHA and dirty/clean status; it never changes the Unity repository. Use the actual `feat/rising-slash` checkout. Commit the regenerated `knowledge.json` to the web app repo, which should remain **private** if team source is not approved for public distribution. Restart or redeploy the app to load the regenerated index.
+
+The importer indexes only C# source under `Assets/K4RMA`; if you need to include additional documentation or other code folders, extend and test the importer deliberately. It cannot prove Unity Play Mode behavior.
+
+## Deploy to Vercel — secure configuration required
+
+1. Put this project in a private repository; configure Vercel for a static `public/` directory plus the included `api/` Node functions. Set HTTPS domain.
+2. Set `APP_PIN` to a long **random** secret of at least eight characters (prefer 16+). A four-digit PIN is rejected in production.
+3. Set the chosen server-side provider API keys and `ANSWER_PROVIDER`.
+4. Set **both** `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from an Upstash Redis database (a free tier may be available). Rate limits in the serverless environment use Redis. Public Vercel APIs **fail closed** if this distributed rate limiter is not configured; otherwise any number of serverless instances could bypass a per-instance limiter.
+5. Deploy; check `/api/config`, PIN validation, rate limits, provider API calls, and microphone capture with permission on HTTPS.
+
+This is an access-secret gate and per-IP quota defense, **not full user authentication**. A public production service with multiple users needs a proper identity/session system, stronger abuse controls, monitoring, privacy review, and infrastructure-specific security validation. Never commit real API keys. Restrict the hosting project to approved team members; using short publicly shared passwords defeats the protection. Configure billing limits with paid providers and monitor usage. Do not promise uninterrupted free quotas.
+
+## Behavioral limitations and safety
+
+- Speaker identification: **not implemented**. Q&A-mode question classification is based on text and may mistake teammates, classmates, or narration for a professor question.
+- Audio quality: a phone near presenters may not capture a distant professor. overlapping chunks improve boundaries but do not guarantee correct transcription; short questions may be missed. When overloaded, the app warns that audio was skipped.
+- Answer accuracy: source-ID validation checks that cited documents exist, not that every assertion is true. Reviewer validation is required for technically consequential answers.
+- Source age: older integrated code and later excerpts may contradict each other; sync the actual branch before depending on the result.
+- Network: live speech and generated answers require connectivity; service worker caches only UI assets and never audio/API responses.
+- Privacy: microphone clips are sent to Groq; questions and selected source excerpts are transmitted to the configured answer provider. The app does not persist raw recordings, but providers may process or retain data under their separate policies.
+
+## Engineering reference
+
+- `lib/retrieval.mjs` — indexed source matching, relevance gate, evidence budget.
+- `lib/providers.mjs` — Groq/OpenAI/Anthropic/OpenRouter adapters and strict output contracts.
+- `lib/security.mjs` — constant-time PIN checks and rate limiting; Redis in serverless deployments.
+- `lib/core.mjs` — question handling, evidence-aware answer composition and Whisper transcription.
+- `lib/vercel-handler.mjs`, `api/`, `server.mjs` — consistent API protections for both runtimes.
+- `public/app.js`, `public/audio-utils.js`, `public/styles.css` — bilingual responsive UI, overlapping audio windows, transcript deduplication.
+- `tools/sync-source.mjs` — refresh knowledge index from the local authoritative Unity source.
+- `tests/` — unit, retrieval, model-adapter, security and translation checks.
+
+Run `npm test` before committing. Additionally run browser smoke tests, a real HTTPS phone-mic test, and a 15-minute classroom-like rehearsal with permission. Passing the automated suite alone is not a deployment certificate.
+
+Official API documentation: [Groq structured outputs](https://console.groq.com/docs/structured-outputs), [Groq reasoning](https://console.groq.com/docs/reasoning), [Anthropic structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs), [OpenAI API](https://platform.openai.com/docs/), [OpenRouter API](https://openrouter.ai/docs).

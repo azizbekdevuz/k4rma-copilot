@@ -1,5 +1,11 @@
+# Secret configuration
 .env
-.env.local
+.env.*
+!.env.example
 node_modules/
 .DS_Store
 .vercel/
+*.log
+# Temporary local previews and test outputs
+*-preview.png
+coverage/
