@@ -1,8 +1,8 @@
-# K4RMA Live Copilot
+# K4RMA Signal — Live Copilot v2
 
 Phone-first presentation Q&A grounded in the K4RMA C# source, your later diff exports, and Jeongmin's submitted Week 10 PowerPoint notes.
 
-**Actual working website**. Built with dependency-free Node.js and plain JS/CSS so you can run it immediately without `npm install`.
+**Runnable local web app**. Built with dependency-free Node.js and plain JS/CSS so you can run it immediately without `npm install`.
 
 ## Run locally
 
@@ -36,13 +36,25 @@ Without `GROQ_API_KEY`, the app supports manual question search **in evidence-on
 
 **Security:** API keys must remain on the server. Never put them in `public/app.js`, the client form, a committed `.env`, or a public GitHub repo. The optional PIN is a lightweight access gate only, not full authentication. A public deployment without a PIN is unsafe because strangers can spend your API quota. Audio clips are sent to Groq, not saved by this app. Third-party provider handling and retention are controlled by their own policies.
 
-## Use
+## What changed in v2
 
-- Select the active slide and answer language. For Rising Slash use slides **19–23**.
-- Tap the microphone to record independent ~9-second Korean audio clips. Whisper transcribes each; a lightweight detector proposes questions and the app answers the detected questions automatically. Always check the transcript. This is *near-live*, not streaming word-by-word.
-- Use **Answer latest** if a question was missed, or enter the question manually. This remains the most reliable fallback.
-- Click source citations to see excerpts. Each excerpt is labeled **submitted-slide**, **archived-source**, or **later-diff**.
-- The PWA can be installed to the home screen from the browser menu when hosted on HTTPS. Screen Wake Lock is requested where supported, but do not lock the phone or switch to the background during listening.
+- **Fully bilingual website UI**: all interface controls, explanations, status labels and error messages in Korean or English, switched instantly via the header. Answer language remains a separate choice.
+- **Speaker-aware workflow WITHOUT fake speaker identification**: Presenting mode prevents automatic answers to your teammates' speech; switch to Q&A mode when the question period begins. The phone does NOT know who is the professor. In Q&A mode, likely questions are prioritized, and less certain candidates require one-tap approval. Voice recognition/enrollment is intentionally NOT claimed or implemented.
+- **Better answer contract**: the LLM is instructed to answer the actual question, explain concrete C# methods/data flow, say *why* the mechanism is used, and acknowledge gaps and older code versions. Answers cite retrieved snippets; short follow-ups include the previous questions as context.
+- **Redesigned UI**: compact, high-contrast typography, responsive two-column desktop view, large readable answer, restrained signal-green highlights, keyboard focus states, reduced-motion support, and touch-friendly controls.
+- **Strict OpenRouter free-model guard**: only `openrouter/free` and model IDs ending `:free` are permitted. Groq requests are not charged when you stay on a free Groq account within its quota. No purchase is required for the app itself.
+
+## Classroom usage (with permission)
+
+1. Choose the slide and answer language; optionally select Korean interface with the header language switch.
+2. During your team’s presentation, keep **Presenting** mode enabled. The app can still transcribe for review, but **does not auto-answer**.
+3. At Q&A, switch to **Q&A time**. The app detects likely spoken questions from the text. Strong candidates auto-answer if enabled; uncertain candidates show a one-tap confirmation prompt.
+4. If the speaker is too far away or speech is noisy, type the question directly or use **Answer latest**.
+5. Answers show source snippets and version labels. *High evidence* refers to cited source support, **not** proof of successful Unity Play Mode execution.
+
+**Critical limitation:** This is a practical **presentation-phase filter**, not biometric speaker identification. No single-phone free-tier system guarantees differentiation of a professor from teammates in a live classroom. A laptop with a microphone physically closer to the questioner may improve captured audio. For full automatic identification, a separately validated, consented diarization/speaker-enrollment solution is necessary, and its reliability remains environment-dependent.
+
+The browser records independent ~9-second clips and sends them to Groq Whisper. It is not continuous sample-by-sample streaming; question latency and chunk-boundary errors remain possible. The app does not store raw audio, but third-party processing policies apply. Keep the screen on and this tab active.
 
 ## Data integrity / important limitations
 
@@ -67,6 +79,10 @@ Use manual UI checks in a browser, then test microphone capture on an HTTPS phon
 - `public/app.js` — microphone capture, transcription queue, UI actions
 - `knowledge.json` — pre-indexed source, later diffs, 28 slides + notes
 - `build_knowledge.py` — local index generator (requires `python-pptx` if rebuilding)
+
+## Tests and limitations
+
+`npm test` includes bilingual UI key checks, presenter/Q&A gating checks, free-model enforcement and source retrieval smoke tests. Local JavaScript and API smoke tests are not proof of Korean acoustic accuracy. A live Groq account, real phone browser, classroom recording conditions and human review are required for acceptance.
 
 ## Model defaults
 
