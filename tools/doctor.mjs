@@ -1,0 +1,12 @@
+import {config} from '../lib/core.mjs';import {securityConfig} from '../lib/security.mjs';
+const info=config();const errors=[];const warnings=[];
+if(!info.groq)warnings.push('GROQ_API_KEY missing: microphone transcription disabled.');
+if(![info.groq,info.openai,info.anthropic,info.openrouter].some(Boolean))warnings.push('No answer provider configured: evidence-only mode.');
+if(!process.env.APP_PIN)warnings.push('APP_PIN missing: safe only on localhost development server.');
+if(process.env.APP_PIN&&process.env.APP_PIN.length<12)warnings.push('APP_PIN shorter than recommended 12 characters.');
+if(!info.knowledge.commit)warnings.push('Knowledge is an older source snapshot plus diffs; run tools/sync-source.mjs on latest Unity checkout.');
+const sec=securityConfig();if(sec)errors.push(sec);
+console.log('K4RMA Signal configuration (credentials are not printed)');
+console.log('Answer providers:', ['groq','openai','anthropic','openrouter'].filter(k=>info[k]).join(', ')||'none');
+console.log('Indexed source:',info.sourceVersion);for(const w of warnings)console.log('WARNING:',w);for(const e of errors)console.error('BLOCKER:',e);
+if(errors.length)process.exitCode=1;
