@@ -1,2 +1,2 @@
-import {handler} from '../lib/http.mjs';
-export default async function(req,res){const output=await handler('config',{});res.status(200).json(output)}
+import {runVercel} from '../lib/vercel-handler.mjs';
+export default async function(req,res){return runVercel(req,res,'config')}
